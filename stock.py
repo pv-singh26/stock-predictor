@@ -1,123 +1,91 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
 import yfinance as yf
- 
 import streamlit as st
 
-start = '2010-01-10'
-end = '2024-12-31'
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
 
+# Streamlit UI
 st.title('Stock Trend Prediction')
-
 user_input = st.text_input('Enter Stock Ticker', 'AAPL')
 
+# Download data
+start = '2010-01-10'
+end = '2024-12-31'
 df = yf.download(user_input, start=start, end=end)
 
+# Show basic data info
 st.subheader('Data from 2010-2024')
 st.write(df.describe())
 
+# Plot closing price
 st.subheader('Closing Price vs Time Chart')
-fig = plt.figure(figsize=(12,6))
-plt.plot(df.Close)
+fig = plt.figure(figsize=(12, 6))
+plt.plot(df['Close'], label='Closing Price')
+plt.legend()
 st.pyplot(fig)
 
-st.subheader('Closing Price vs Time Chart with 100MA')
-ma100 = df.Close.rolling(100).mean()
-fig = plt.figure(figsize=(12,6))
-plt.plot(ma100)
-plt.plot(df.Close)
+# Plot with 100 MA
+st.subheader('Closing Price with 100MA')
+ma100 = df['Close'].rolling(100).mean()
+fig = plt.figure(figsize=(12, 6))
+plt.plot(ma100, label='100MA')
+plt.plot(df['Close'], label='Closing Price')
+plt.legend()
 st.pyplot(fig)
 
-st.subheader('Closing Price vs Time Chart with 100MA & 200MA')
-ma100 = df.Close.rolling(100).mean()
-ma200 = df.Close.rolling(200).mean()
-fig = plt.figure(figsize=(12,6))
-plt.plot(ma100, 'g')
-plt.plot(ma200, 'r')
-plt.plot(df.Close, 'b')
+# Plot with 100 & 200 MA
+st.subheader('Closing Price with 100MA & 200MA')
+ma200 = df['Close'].rolling(200).mean()
+fig = plt.figure(figsize=(12, 6))
+plt.plot(ma100, 'g', label='100MA')
+plt.plot(ma200, 'r', label='200MA')
+plt.plot(df['Close'], 'b', label='Closing Price')
+plt.legend()
 st.pyplot(fig)
 
-data_training = pd.DataFrame(df['Close'][0:int(len(df)*0.70)])
-data_testing = pd.DataFrame(df['Close'][int(len(df)*0.70):int(len(df))])
-
-
-from sklearn.preprocessing import MinMaxScaler
-scaler = MinMaxScaler(feature_range=(0,1))
-data_training_array = scaler.fit_transform(data_training)  
-
-x_train = []
-y_train = []
-
-for i in range(100,data_training_array.shape[0]):
-    x_train.append(data_training_array[i-100:i])
-    y_train.append(data_training_array[i, 0])
-x_train, y_train= np.array(x_train), np.array(y_train) 
-
-from sklearn.ensemble import RandomForestRegressor
-
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-from sklearn.preprocessing import StandardScaler
-scaler = StandardScaler()
-
-x_train = scaler.fit_transform(x_train)
-x_test = scaler.transform(x_test)
-
-
+# Helper function to create lagged features
 def create_lagged_features(series, lag=100):
-    df = pd.DataFrame()
+    df_lag = pd.DataFrame()
     for i in range(lag):
-        df[f'lag_{i+1}'] = series.shift(i+1)
-    df['target'] = series.values
-    df.dropna(inplace=True)  # Drop all rows with NaNs
-    return df
+        df_lag[f'lag_{i+1}'] = series.shift(i+1)
+    df_lag['target'] = series.values
+    df_lag.dropna(inplace=True)
+    return df_lag
 
+# Create lagged dataset
+lag = 100
+df_lagged = create_lagged_features(df['Close'], lag=lag)
 
-df_lagged = create_lagged_features(df['Close'], lag=100)
-
-
-df_lagged.dropna(inplace=True)  # REDUNDANT BUT SAFE
-
-
+# Split into train and test sets
 train_size = int(len(df_lagged) * 0.7)
 train = df_lagged[:train_size]
 test = df_lagged[train_size:]
 
 x_train = train.drop('target', axis=1).values
 y_train = train['target'].values
-
 x_test = test.drop('target', axis=1).values
 y_test = test['target'].values
 
+# Scale the data
+scaler = StandardScaler()
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
 
-model.compile(optimizer ='adam', loss= 'mean_squared_error')
-model.fit(x_train, y_train, epochs = 3)
+# Train the model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(x_train, y_train)
 
-past_100_days = data_training.tail(100)
-
-final_df = pd.concat([past_100_days, data_testing], ignore_index=True)
-
-input_data= scaler.fit_transform(final_df)
-
-x_test=[]
-y_test=[]
-for i in range(100,input_data.shape[0]):
-    x_test.append(input_data[i-100:i])
-    y_test.append(input_data[i, 0])
-x_test, y_test= np.array(x_test), np.array(y_test)
-
+# Make predictions
 y_predicted = model.predict(x_test)
-scaler= scaler.scale_
 
-scale_factor = 1/scaler[0]
-y_predicted= y_predicted*scale_factor
-y_test= y_test*scale_factor
-
-st.subheader('Predictions vs Original')
-fig2 = plt.figure(figsize=(12,6))
-plt.plot(y_test, 'b', label= 'Original Price')
-plt.plot(y_predicted, 'r', label= 'Predicted Price')
+# Plot predictions vs actual
+st.subheader('Predictions vs Actual')
+fig2 = plt.figure(figsize=(12, 6))
+plt.plot(y_test, 'b', label='Actual Price')
+plt.plot(y_predicted, 'r', label='Predicted Price')
 plt.xlabel('Time')
 plt.ylabel('Price')
 plt.legend()
