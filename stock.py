@@ -31,7 +31,7 @@ plt.plot(df.Close)
 st.pyplot(fig)
 
 st.subheader('Prediction vs Original')
-ma100 = df.Close.rolling(5).mean()
+ma100 = df.Close.rolling(50).mean()
 ma200 = df.Close.rolling(10).mean()
 fig = plt.figure(figsize=(12,6))
 plt.plot(ma100, 'b', label= 'Original Price')
