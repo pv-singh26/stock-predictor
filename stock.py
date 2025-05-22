@@ -47,7 +47,7 @@ plt.legend()
 st.pyplot(fig)
 
 # Helper function to create lagged features
-def create_lagged_features(series, lag=100):
+def create_lagged_features(series, lag=50):
     df_lag = pd.DataFrame()
     for i in range(lag):
         df_lag[f'lag_{i+1}'] = series.shift(i+1)
@@ -56,7 +56,7 @@ def create_lagged_features(series, lag=100):
     return df_lag
 
 # Create lagged dataset
-lag = 100
+lag = 50
 df_lagged = create_lagged_features(df['Close'], lag=lag)
 
 # Split into train and test sets
@@ -71,21 +71,21 @@ y_test = test['target'].values
 
 # Scale the data
 scaler = StandardScaler()
-x_train = scaler.fit_transform(x_train)
-x_test = scaler.transform(x_test)
+x_train_scaled = scaler.fit_transform(x_train)
+x_test_scaled = scaler.transform(x_test)
 
-# Train the model
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(x_train, y_train)
+# Train the model (increased depth and estimators)
+model = RandomForestRegressor(n_estimators=300, max_depth=15, random_state=42)
+model.fit(x_train_scaled, y_train)
 
 # Make predictions
-y_predicted = model.predict(x_test)
+y_predicted = model.predict(x_test_scaled)
 
-# Plot predictions vs actual
-st.subheader('Predictions vs Actual')
+# Show comparison (last 200 for readability)
+st.subheader('Predictions vs Actual (last 200 points)')
 fig2 = plt.figure(figsize=(12, 6))
-plt.plot(y_test, 'b', label='Actual Price')
-plt.plot(y_predicted, 'r', label='Predicted Price')
+plt.plot(y_test[-200:], 'b', label='Actual Price')
+plt.plot(y_predicted[-200:], 'r', label='Predicted Price')
 plt.xlabel('Time')
 plt.ylabel('Price')
 plt.legend()
