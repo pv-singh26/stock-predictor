@@ -5,4 +5,4 @@ numpy
 scikit-learn
 pandas_datareader
 yfinance
-tensorflow==2.14.0
+
