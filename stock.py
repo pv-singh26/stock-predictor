@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import yfinance as yf
-
+import tensorflow 
 import streamlit as st
 
 start = '2010-01-10'
@@ -55,8 +55,8 @@ for i in range(100,data_training_array.shape[0]):
     y_train.append(data_training_array[i, 0])
 x_train, y_train= np.array(x_train), np.array(y_train) 
 
-from keras.layers import Dense, Dropout, LSTM
-from keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, LSTM
+from tensorflow.keras.models import Sequential
 
 model = Sequential()
 
