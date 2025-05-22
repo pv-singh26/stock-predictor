@@ -84,11 +84,17 @@ model.fit(x_train_scaled, y_train)
 y_predicted = model.predict(x_test_scaled)
 
 # Plot results
+# Plot results
 st.subheader('Predictions vs Original')
 fig2 = plt.figure(figsize=(12,6))
-plt.plot(y_test, 'b', label='Original Price')
-plt.plot(y_predicted, 'r', label='Predicted Price')
-plt.xlabel('Time')
+
+# Create an index that matches y_test
+pred_index = df.index[-len(y_test):]
+
+plt.plot(pred_index, y_test, label='Original Price', color='blue')
+plt.plot(pred_index, y_predicted, label='Predicted Price', color='red')
+plt.xlabel('Date')
 plt.ylabel('Price')
 plt.legend()
 st.pyplot(fig2)
+
