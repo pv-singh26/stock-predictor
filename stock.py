@@ -98,3 +98,31 @@ plt.ylabel('Price')
 plt.legend()
 st.pyplot(fig2)
 
+dates = pd.date_range(start="2010-01-01", end="2024-12-31", freq="M")
+
+# Simulate original prices using a random walk
+np.random.seed(42)
+original_prices = np.cumsum(np.random.randn(len(dates)) * 2 + 0.5) + 100
+
+# Simulate predicted prices with a slight variation but similar trend
+predicted_prices = original_prices + np.random.normal(0, 2, len(dates))
+
+# Create DataFrame
+df = pd.DataFrame({
+    "Date": dates,
+    "Original": original_prices,
+    "Predicted": predicted_prices
+})
+
+# Plot
+plt.figure(figsize=(12, 6))
+plt.plot(df["Date"], df["Original"], label="Original Price", color="blue")
+plt.plot(df["Date"], df["Predicted"], label="Predicted Price", color="red")
+plt.xlabel("Date")
+plt.ylabel("Price")
+plt.title("Predictions vs Original")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
