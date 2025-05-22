@@ -3,89 +3,91 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
 import streamlit as st
-
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 
-# Streamlit UI
+# Set up dates
+start = '2010-01-10'
+end = '2024-12-31'
+
+# Title
 st.title('Stock Trend Prediction')
+
+# Input
 user_input = st.text_input('Enter Stock Ticker', 'AAPL')
 
 # Download data
-start = '2010-01-10'
-end = '2024-12-31'
 df = yf.download(user_input, start=start, end=end)
+df = df[['Close']]  # Use only 'Close' column
+df.dropna(inplace=True)
 
-# Show basic data info
 st.subheader('Data from 2010-2024')
 st.write(df.describe())
 
-# Plot closing price
+# Visualization
 st.subheader('Closing Price vs Time Chart')
-fig = plt.figure(figsize=(12, 6))
-plt.plot(df['Close'], label='Closing Price')
-plt.legend()
+fig = plt.figure(figsize=(12,6))
+plt.plot(df['Close'])
 st.pyplot(fig)
 
-# Plot with 100 MA
-st.subheader('Closing Price with 100MA')
+# 100MA
+st.subheader('Closing Price vs Time Chart with 100MA')
 ma100 = df['Close'].rolling(100).mean()
-fig = plt.figure(figsize=(12, 6))
+fig = plt.figure(figsize=(12,6))
+plt.plot(df['Close'], label='Close')
 plt.plot(ma100, label='100MA')
-plt.plot(df['Close'], label='Closing Price')
 plt.legend()
 st.pyplot(fig)
 
-# Plot with 100 & 200 MA
-st.subheader('Closing Price with 100MA & 200MA')
+# 100MA & 200MA
+st.subheader('Closing Price vs Time Chart with 100MA & 200MA')
 ma200 = df['Close'].rolling(200).mean()
-fig = plt.figure(figsize=(12, 6))
-plt.plot(ma100, 'g', label='100MA')
-plt.plot(ma200, 'r', label='200MA')
-plt.plot(df['Close'], 'b', label='Closing Price')
+fig = plt.figure(figsize=(12,6))
+plt.plot(df['Close'], label='Close')
+plt.plot(ma100, label='100MA', color='green')
+plt.plot(ma200, label='200MA', color='red')
 plt.legend()
 st.pyplot(fig)
 
-# Helper function to create lagged features
-def create_lagged_features(series, lag=50):
+# Create lagged features
+def create_lagged_features(series, lag=100):
     df_lag = pd.DataFrame()
-    for i in range(lag):
-        df_lag[f'lag_{i+1}'] = series.shift(i+1)
+    for i in range(1, lag+1):
+        df_lag[f'lag_{i}'] = series.shift(i)
     df_lag['target'] = series.values
     df_lag.dropna(inplace=True)
     return df_lag
 
-# Create lagged dataset
-lag = 50
+lag = 100
 df_lagged = create_lagged_features(df['Close'], lag=lag)
 
-# Split into train and test sets
+# Train-test split
 train_size = int(len(df_lagged) * 0.7)
-train = df_lagged[:train_size]
-test = df_lagged[train_size:]
+train = df_lagged.iloc[:train_size]
+test = df_lagged.iloc[train_size:]
 
 x_train = train.drop('target', axis=1).values
 y_train = train['target'].values
 x_test = test.drop('target', axis=1).values
 y_test = test['target'].values
 
-# Scale the data
+# Scale features
 scaler = StandardScaler()
 x_train_scaled = scaler.fit_transform(x_train)
 x_test_scaled = scaler.transform(x_test)
 
-# Train the model (increased depth and estimators)
-model = RandomForestRegressor(n_estimators=300, max_depth=15, random_state=42)
+# Model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(x_train_scaled, y_train)
 
-# Make predictions
+# Predictions
 y_predicted = model.predict(x_test_scaled)
 
-# Show comparison (last 200 for readability)
-st.subheader('Predictions vs Actual (last 10 points)')
-fig2 = plt.figure(figsize=(12, 6))
-plt.plot(y_test[10:], 'b', label='Actual Price')
-plt.plot(y_predicted[10:], 'r', label='Predicted Price')
+# Plot results
+st.subheader('Predictions vs Original')
+fig2 = plt.figure(figsize=(12,6))
+plt.plot(y_test, 'b', label='Original Price')
+plt.plot(y_predicted, 'r', label='Predicted Price')
 plt.xlabel('Time')
 plt.ylabel('Price')
 plt.legend()
