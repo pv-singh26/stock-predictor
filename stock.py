@@ -55,24 +55,31 @@ for i in range(100,data_training_array.shape[0]):
     y_train.append(data_training_array[i, 0])
 x_train, y_train= np.array(x_train), np.array(y_train) 
 
-from keras.layers import Dense, Dropout, LSTM
-from keras.models import Sequential
+from sklearn.ensemble import RandomForestRegressor
 
-model = Sequential()
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(x_train, y_train)
 
-model.add(LSTM(units = 50, activation ='relu', return_sequences = True, input_shape= (x_train.shape[1], 1)))
-model.add(Dropout(0.2))
 
-model.add(LSTM(units = 60, activation ='relu', return_sequences = True))
-model.add(Dropout(0.3))
+def create_lagged_features(series, lag=100):
+    df = pd.DataFrame()
+    for i in range(lag):
+        df[f'lag_{i+1}'] = series.shift(i+1)
+    df['target'] = series.values
+    df.dropna(inplace=True)
+    return df
 
-model.add(LSTM(units = 80, activation ='relu', return_sequences = True))
-model.add(Dropout(0.4))
+df_lagged = create_lagged_features(df['Close'], lag=100)
 
-model.add(LSTM(units = 120, activation ='relu'))
-model.add(Dropout(0.5))
+train_size = int(len(df_lagged) * 0.7)
+train = df_lagged[:train_size]
+test = df_lagged[train_size:]
 
-model.add(Dense(units=1))
+x_train = train.drop('target', axis=1).values
+y_train = train['target'].values
+
+x_test = test.drop('target', axis=1).values
+y_test = test['target'].values
 
 model.compile(optimizer ='adam', loss= 'mean_squared_error')
 model.fit(x_train, y_train, epochs = 3)
