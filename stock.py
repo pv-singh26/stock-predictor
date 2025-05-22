@@ -58,7 +58,11 @@ x_train, y_train= np.array(x_train), np.array(y_train)
 from sklearn.ensemble import RandomForestRegressor
 
 model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(x_train, y_train)
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
 
 
 def create_lagged_features(series, lag=100):
@@ -66,10 +70,15 @@ def create_lagged_features(series, lag=100):
     for i in range(lag):
         df[f'lag_{i+1}'] = series.shift(i+1)
     df['target'] = series.values
-    df.dropna(inplace=True)
+    df.dropna(inplace=True)  # Drop all rows with NaNs
     return df
 
+
 df_lagged = create_lagged_features(df['Close'], lag=100)
+
+
+df_lagged.dropna(inplace=True)  # REDUNDANT BUT SAFE
+
 
 train_size = int(len(df_lagged) * 0.7)
 train = df_lagged[:train_size]
@@ -80,6 +89,7 @@ y_train = train['target'].values
 
 x_test = test.drop('target', axis=1).values
 y_test = test['target'].values
+
 
 model.compile(optimizer ='adam', loss= 'mean_squared_error')
 model.fit(x_train, y_train, epochs = 3)
