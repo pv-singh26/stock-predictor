@@ -91,13 +91,9 @@ fig2 = plt.figure(figsize=(12,6))
 # Create an index that matches y_test
 pred_index = df.index[-len(y_test):]
 
-plt.plot(pred_index, y_test, label='Original Price', color='blue')
-plt.plot(pred_index, y_predicted, label='Predicted Price', color='red')
-plt.xlabel('Date')
-plt.ylabel('Price')
-plt.legend()
-st.pyplot(fig2)
 
+
+# Generate a date range from 2010 to 2024
 dates = pd.date_range(start="2010-01-01", end="2024-12-31", freq="M")
 
 # Simulate original prices using a random walk
@@ -125,4 +121,3 @@ plt.legend()
 plt.grid(True)
 plt.tight_layout()
 plt.show()
-
