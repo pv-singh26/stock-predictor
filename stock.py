@@ -93,6 +93,10 @@ pred_index = df.index[-len(y_test):]
 
 
 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
 # Generate a date range from 2010 to 2024
 dates = pd.date_range(start="2010-01-01", end="2024-12-31", freq="M")
 
