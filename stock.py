@@ -39,7 +39,6 @@ plt.plot(ma200, 'r')
 plt.plot(df.Close, 'b')
 st.pyplot(fig)
 
-model = load_model('pvs.h5')
 
 st.subheader('Prediction vs Original')
 ma100 = df.Close.rolling(10).mean()
